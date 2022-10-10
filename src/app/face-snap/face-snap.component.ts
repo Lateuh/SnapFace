@@ -23,13 +23,13 @@ export class FaceSnapComponent implements OnInit{
     this.snapButtonText = "Oh snap! 😁";
   }
 
-  onSnap(): void {
+  onSnap(faceSnapId: number): void {
     if (this.canSnap) {
-      this.faceSnapService.snapFaceSnapById(this.faceSnap.id, "snap");
+      this.faceSnapService.snapFaceSnapById(faceSnapId, "snap");
       this.canSnap = false;
       this.snapButtonText = "Oops, not snap ☹";
     } else {
-      this.faceSnapService.snapFaceSnapById(this.faceSnap.id, "unsnap")
+      this.faceSnapService.snapFaceSnapById(faceSnapId, "unsnap")
       this.canSnap = true;
       this.snapButtonText = "Oh snap! 😁";
     }

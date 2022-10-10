@@ -1,65 +1,50 @@
 import { Injectable } from '@angular/core';
 import {FaceSnap} from "../models/FaceSnap";
+import {HttpClient} from "@angular/common/http";
+import {filter, find, identity, Observable} from "rxjs";
+import {switchMap, map} from "rxjs/operators";
 
 @Injectable({
   providedIn: 'root'
 })
 export class FaceSnapsService {
 
-  mySnaps: FaceSnap[] = [{
-    id: 0,
-    title: 'Ted',
-    description: 'Mon meilleur ami depuis tout petit !',
-    imageUrl: 'https://cdn.pixabay.com/photo/2015/05/31/16/03/teddy-bear-792273_1280.jpg',
-    createdDate: new Date(),
-    snaps: 74,
-    location: 'Hollywood'
-  },
-    {
-      id: 1,
-      title: 'Three Rock Mountain',
-      description: 'Un endroit magnifique pour les randonnées.',
-      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Three_Rock_Mountain_Southern_Tor.jpg/2880px-Three_Rock_Mountain_Southern_Tor.jpg',
-      createdDate: new Date(),
-      snaps: 22
-    },
-    {
-      id: 2,
-      title: 'Un bon repas',
-      description: 'Mmmh que c\'est bon !',
-      imageUrl: 'https://wtop.com/wp-content/uploads/2020/06/HEALTHYFRESH.jpg',
-      createdDate: new Date(),
-      snaps: 48
-    }];
-
-
-  getAllFaceSnaps(): FaceSnap[] {
-    return this.mySnaps;
-  }
-
-  snapFaceSnapById(id: number, snapType: 'snap' | 'unsnap'): void {
-    const faceSnap = this.getFaceSnapById(id);
-    snapType === 'snap' ? faceSnap.snaps++ : faceSnap.snaps--;
-  }
-
-  getFaceSnapById(id: number): FaceSnap {
-    const faceSnap : FaceSnap | undefined = this.mySnaps.find(faceSnap => faceSnap.id === id);
-    if (faceSnap) {
-      return faceSnap;
-    } else {
-      throw new Error('FaceSnap not found!');
-    }
+  constructor(private http: HttpClient) {
   }
 
 
-  addFaceSnap(formValue: { title: string, description: string, imageUrl: string, location?: string }): void {
-    const faceSnap: FaceSnap = {
-      ...formValue,
-      snaps: 0,
-      createdDate: new Date(),
-      id: this.mySnaps[this.mySnaps.length - 1].id + 1
-    };
+  getAllFaceSnaps(): Observable<FaceSnap[]> {
+    return this.http.get<FaceSnap[]>('http://localhost:3000/facesnaps');
+  }
 
-    this.mySnaps.push(faceSnap);
+  snapFaceSnapById(faceSnapId: number, snapType: 'snap' | 'unsnap'): Observable<FaceSnap> {
+    return  this.getFaceSnapById(faceSnapId).pipe(
+      map(faceSnap => ({
+        ...faceSnap,
+        snaps: faceSnap.snaps + (snapType === 'snap' ? 1 : -1)
+      })),
+      switchMap(updatedFaceSnap => this.http.put<FaceSnap>(
+        `http://localhost:3000/facesnaps/${faceSnapId}`,
+        updatedFaceSnap)
+      ));
+  }
+
+  getFaceSnapById(faceSnapId: number): Observable<FaceSnap> {
+    return this.http.get<FaceSnap>(`http://localhost:3000/facesnaps/${faceSnapId}`);
+  }
+
+
+  addFaceSnap(formValue: { title: string, description: string, imageUrl: string, location?: string }): Observable<FaceSnap> {
+    return this.getAllFaceSnaps().pipe(
+      map(faceSnaps => [...faceSnaps].sort((a,b) => a.id - b.id)),
+      map(sortedSnaps => sortedSnaps[sortedSnaps.length - 1]),
+      map(previousSnap => ({
+        ...formValue,
+        snaps: 0,
+        createdDate: new Date(),
+        id: previousSnap.id + 1
+      })),
+      switchMap(newFaceSnap => this.http.post<FaceSnap>('http://localhost:3000/facesnaps', newFaceSnap))
+    );
   }
 }
