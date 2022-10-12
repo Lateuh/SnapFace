@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import { interval, of } from 'rxjs';
 import { concatMap, mergeMap, delay, exhaustMap, map, switchMap, take, tap } from 'rxjs/operators';
-import {FaceSnap} from "./models/FaceSnap";
+import {FaceSnap} from "./core/models/FaceSnap";
 
 @Component({
   selector: 'app-root',
